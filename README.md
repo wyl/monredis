@@ -4,8 +4,10 @@ a go daemon that syncs mongodb to redis in realtime
 
 实时同步mongo 数据到redis。理论上支持redis 大部分命令，HSET/SET/RPUSH 等。
 
-monredis 是根据 monstache 改编而来。
+monredis 是根据 monstache 改编而来，大多数配置参考monstache。
 
+### start
+> monredis -f config.toml --enable-http-server
 
 ### example config.toml
 ```toml
