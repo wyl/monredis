@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export COMPOSE_FILE=docker-compose.test.yml
-export COMPOSE_PROJECT_NAME=monstache
+export COMPOSE_PROJECT_NAME=monredis
 
 # The network created by docker-compose will be called ${COMPOSE_PROJECT_NAME}_test as we have the network test in docker-compose
 

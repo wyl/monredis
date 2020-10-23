@@ -6,20 +6,20 @@ networks:
 
 services:
 
-  monstache:
-    image: rwynn/monstache-test
-    container_name: c-monstache
+  monredis:
+    image: wyl/monredis
+    container_name: c-monredis
     working_dir: /app
-    command: -f ./monstache.test.config.toml
+    command: -f ./monredis.test.config.toml
     build:
       context: ../..
       dockerfile: ./Dockerfile
     volumes:
-      - $PWD/monstache.test.config.toml:/app/monstache.test.config.toml
+      - $PWD/monredis.test.config.toml:/app/monredis.test.config.toml
     depends_on:
       mongo-0:
         condition: service_started
-      es7:
+      redis:
         condition: service_healthy
     ports:
       - "8080:8080"
@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
 
   sut:
-    image: rwynn/monstache-test-runner
+    image: wyl/monredis
     container_name: c-sut
     command: go test -v
     build:
@@ -43,13 +43,13 @@ services:
     depends_on:
       mongo-0:
         condition: service_started
-      es7:
+      redis:
         condition: service_healthy
-      monstache:
+      monredis:
         condition: service_healthy
     environment:
       MONGO_DB_URL: 'mongodb://root-user:password@mongo-0:27017'
-      ELASTIC_SEARCH_URL: 'http://es7:9200'
+      ELASTIC_SEARCH_URL: 'http://:123456@redis:6379'
     networks:
       - test
 
@@ -90,22 +90,10 @@ services:
       retries: 300
     restart: unless-stopped
 
-  es7:
-    image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.0.0
-    logging:
-      driver: none
-    container_name: c-es
-    environment:
-        - discovery.type=single-node
-    # volumes:
-    #   - ./elasticsearch/elasticsearch.config.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+  redis:
+    image: redis:5.0.0
+    container_name: redis
+    command: redis-server --requirepass 123456
     ports:
-      - "9200:9200"
-    networks:
-      - test
-    healthcheck:
-      test: "wget -q -O - http://localhost:9200/_cat/health"
-      interval: 1s
-      timeout: 30s
-      retries: 300
+      - "16379:6379"
     restart: unless-stopped

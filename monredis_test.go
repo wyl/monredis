@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"math"
@@ -12,7 +11,6 @@ import (
 	"time"
 
 	"github.com/rwynn/gtm/v2"
-	"github.com/rwynn/monstache/monstachemap"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -83,22 +81,6 @@ func DropTestDB(t *testing.T, client *mongo.Client) {
 	db := client.Database("test")
 	if err := db.Drop(context.Background()); err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestMarshallEmptyArray(t *testing.T) {
-	var data = map[string]interface{}{
-		"data": make([]interface{}, 0),
-		"ints": []interface{}{1, 2, 3},
-	}
-	b, err := json.Marshal(monstachemap.ConvertMapForJSON(data))
-	if err != nil {
-		t.Fatalf("Unable to marshal object: %s", err)
-	}
-	expectedJSON := "{\"data\":[],\"ints\":[1,2,3]}"
-	actualJSON := string(b)
-	if actualJSON != expectedJSON {
-		t.Fatalf("Expected %s but got %s", expectedJSON, actualJSON)
 	}
 }
 
