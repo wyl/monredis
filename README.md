@@ -2,7 +2,7 @@
 a go daemon that syncs mongodb to redis in realtime
 
 
-实时同步mongo 数据到redis。理论上支持redis 大部分命令，HSET/SET/RPUSH 等。
+实时同步mongo 数据到redis。理论上支持redis 大部分命令，SADD/SET/RPUSH 等。
 
 monredis 是根据 monstache 改编而来，大多数配置参考monstache。
 
@@ -45,9 +45,9 @@ script = """
 [[mapping]]
 namespace = "your-database1.collection1"
 index = "index-name"
-command = "SET"
-key = "zone_list:member:{{.member_level}}:vod:{{.vod}}:coupon:{{.vod_coupon}}"
-val = "{{ toString .id }}"
+command = "SADD"
+key = "{{.key1}}-{{.key2}}"
+val = "{{ toJson . }}"
 
 [[script]]
 namespace = "your-database1.collection2"
