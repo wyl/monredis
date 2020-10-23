@@ -50,7 +50,7 @@ key = "{{.key1}}-{{.key2}}"
 val = "{{ toJson . }}"
 
 [[script]]
-namespace = "your-database1.collection2"
+namespace = "your-database1.collection1"
 script = """
   module.exports = function(doc) {
   doc.id = !!doc.id ? doc.id: doc._id
