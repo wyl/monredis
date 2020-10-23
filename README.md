@@ -30,7 +30,7 @@ exit-after-direct-reads = false
 namespace = "your-database.collection"
 index = "index-name"
 command = "SET"
-key = "zone_list:member:{{.member_level}}:vod:{{.vod}}:coupon:{{.vod_coupon}}"
+key = "key:{{.key1}}:key2:{{.key2}}:key3:{{.key3}}"
 val = "{{ toString .id }}"
 
 [[script]]
