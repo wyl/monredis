@@ -13,8 +13,8 @@ monredis 是根据 monstache 改编而来，大多数配置参考monstache。
 ```toml
 mongo-url = "mongodb://user:password@mongo-urls/admin?replicaSet=mgset-17327671"
 redis-url = "redis://:password@redis-urls/2"
-direct-read-namespaces = ["your-database.collection"]
-change-stream-namespaces = ["your-database.collection"]
+direct-read-namespaces = ["your-database.collection", "your-database1.collection2"]
+change-stream-namespaces = ["your-database.collection", "your-database1.collection2"]
 stats = true
 dropped-collections = false
 dropped-databases = false
@@ -35,6 +35,22 @@ val = "{{ toString .id }}"
 
 [[script]]
 namespace = "your-database.collection"
+script = """
+  module.exports = function(doc) {
+  doc.id = !!doc.id ? doc.id: doc._id
+  return doc;
+}
+"""
+
+[[mapping]]
+namespace = "your-database1.collection1"
+index = "index-name"
+command = "SET"
+key = "zone_list:member:{{.member_level}}:vod:{{.vod}}:coupon:{{.vod_coupon}}"
+val = "{{ toString .id }}"
+
+[[script]]
+namespace = "your-database1.collection2"
 script = """
   module.exports = function(doc) {
   doc.id = !!doc.id ? doc.id: doc._id
