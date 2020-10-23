@@ -15,7 +15,6 @@ mongo-url = "mongodb://user:password@mongo-urls/admin?replicaSet=mgset-17327671"
 redis-url = "redis://:password@redis-urls/2"
 direct-read-namespaces = ["your-database.collection"]
 change-stream-namespaces = ["your-database.collection"]
-gzip = true
 stats = true
 dropped-collections = false
 dropped-databases = false
