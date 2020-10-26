@@ -5,7 +5,9 @@ language: go
 go:
   - 1.5.1
 
-script: make release
+script:
+  - go mod download
+  - make release
 
 deploy:
   provider: releases

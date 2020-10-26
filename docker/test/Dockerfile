@@ -1,4 +1,4 @@
-FROM rwynn/monstache-builder-cache-rel6:1.0.5
+FROM golang:1.15
 
 RUN mkdir /app
 
@@ -6,6 +6,6 @@ WORKDIR /app
 
 COPY . .
 
-CMD go env -w GOPROXY=https://goproxy.cn,direct
+RUN go env -w GOPROXY=https://goproxy.cn,direct
 
 RUN go mod download
