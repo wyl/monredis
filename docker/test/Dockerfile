@@ -6,4 +6,6 @@ WORKDIR /app
 
 COPY . .
 
+CMD go env -w GOPROXY=https://goproxy.cn,direct
+
 RUN go mod download
