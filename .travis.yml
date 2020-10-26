@@ -1,32 +1,17 @@
-sudo: required
+os: linux
 
-services:
-  - docker
+language: go
 
-install: true
+go:
+  - 1.5.1
 
-before_script: cd docker/test
-
-script: ./run-tests.sh
+script: make release
 
 deploy:
   provider: releases
-  api_key: $AUTH_TOKEN
-  file:
-    - "sample-darwin-386.tgz"
-    - "sample-darwin-amd64.tgz"
-
-    - "sample-freebsd-386.tgz"
-    - "sample-freebsd-arm.tgz"
-    - "sample-freebsd-amd64.tgz"
-
-    - "sample-linux-386.tgz"
-    - "sample-linux-arm.tgz"
-    - "sample-linux-amd64.tgz"
-
-    - "sample-windows-386.zip"
-    - "sample-windows-amd64.zip"
-
   skip_cleanup: true
+  api_key: $GITHUB_TOKEN
+  file_glob: true
+  file: build/*
   on:
     tags: true
