@@ -8,6 +8,8 @@ go:
 script:
   - make release
 
+env:
+  - GO111MODULE=on
 matrix:
   fast_finish: true
   include:
