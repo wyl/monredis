@@ -1,0 +1,72 @@
+mongo-url = "mongodb://root:vnzcFLZ5Y5uVUK3Y@dds-2zeeb5cc9a6aecf41917-pub.mongodb.rds.aliyuncs.com:3717,dds-2zeeb5cc9a6aecf42759-pub.mongodb.rds.aliyuncs.com:3717/admin?replicaSet=mgset-17327671"
+redis-url = "redis://:gzd4attDAzmG5O6EgsmCbHbUxqUOKY@r-2ze1pzswz2kydk10k5pd.redis.rds.aliyuncs.com:6379/0"
+direct-read-namespaces = ["fm-prod.joint","fm-prod.dd"]
+change-stream-namespaces = ["fm-prod.joint","fm-prod.dd"]
+stats = true
+dropped-collections = false
+dropped-databases = false
+resume = true
+resume-write-unsafe = true
+resume-name = "default"
+resume-strategy = 0
+index-as-update = true
+exit-after-direct-reads = false
+
+[[mapping]]
+namespace = "fm-prod.joint"
+index = "fm-prod.joint"
+command = "SADD"
+key = "{{.cp_vid}}"
+val = "{{ toJson . }}"
+
+[[filter]]
+namespace = "fm-prod.joint"
+script = """
+module.exports = function(doc) {
+    return doc ;
+}
+"""
+
+[[relate]]
+namespace = "fm-prod.joint" # when a state changes trigger a thing change event since thing is associated to a state
+with-namespace = "fm-prod.dd"
+src-field = "connections.id" # use the _id field of the state that changed to lookup associated things
+match-field = "_id" # only trigger change events for the things where thing.s (match-field) = state._id (src-field).
+#keep-src = false
+dot-notation = true
+
+
+[[script]]
+namespace = "fm-prod.joint"
+script = """
+module.exports = function(doc) {
+    console.log(JSON.stringify(doc))
+    return false
+}
+"""
+
+[[mapping]]
+namespace = "fm-prod.dd"
+index = "fm-prod.dd"
+command = "SADD"
+key = "{{.cp_vid}}"
+val = "{{ toJson . }}"
+
+#[[filter]]
+#namespace = "fm-prod.entity"
+#script = """
+#module.exports = function(doc) {
+#    return ['94561100e02d11ea95a457cc85321374', '94498de0e02d11ea95a457cc85321374', '01531de0e91911ea95a457cc85321374', '86a03a30e02911ea867a3b2c54e4df9b','95125c20e02d11ea95a457cc85321374'].indexOf( doc._id ) !=-1 ;
+#}
+#"""
+
+[[script]]
+namespace = "fm-prod.dd"
+script = """
+module.exports = function(doc) {
+
+    console.log("entity",JSON.stringify(doc))
+    return false;
+}
+"""
+

@@ -1142,6 +1142,7 @@ func (ic *indexClient) mapData(op *gtm.Op) error {
 }
 
 func extractData(srcField string, data map[string]interface{}) (result interface{}, err error) {
+	//result := make(map[string]interface{}, 0)
 	var cur = data
 	fields := strings.Split(srcField, ".")
 	flen := len(fields)
@@ -1149,7 +1150,18 @@ func extractData(srcField string, data map[string]interface{}) (result interface
 		if i+1 == flen {
 			result = cur[field]
 		} else {
-			if next, ok := cur[field].(map[string]interface{}); ok {
+			var nextResults []interface{}
+			if next, ok := cur[field].([]interface{}); ok {
+				for _, n := range next {
+					if nns, ok := n.(map[string]interface{}); ok {
+						v, _ := extractData(strings.Join(fields[i+1:], "."), nns)
+						nextResults = append(nextResults, v)
+					}
+				}
+				//fmt.Println(nextResults)
+				result = nextResults
+				break
+			} else if next, ok := cur[field].(map[string]interface{}); ok {
 				cur = next
 			} else {
 				break
@@ -1166,7 +1178,7 @@ func extractData(srcField string, data map[string]interface{}) (result interface
 		}
 		err = fmt.Errorf("Source field %s not found in document: %s", srcField, detail)
 	}
-	return
+	return result, nil
 }
 
 func buildSelector(matchField string, data interface{}) bson.M {
@@ -1230,10 +1242,11 @@ func (ic *indexClient) processRelated(root *gtm.Op) (err error) {
 				col := ic.mongo.Database(r.db).Collection(r.col)
 				var sel bson.M
 				if r.DotNotation {
-					sel = bson.M{r.MatchField: srcData}
+					sel = bson.M{r.MatchField: bson.M{"$in": srcData}}
 				} else {
 					sel = buildSelector(r.MatchField, srcData)
 				}
+
 				cursor, err := col.Find(context.Background(), sel, opts)
 
 				doc := make(map[string]interface{})
@@ -1870,6 +1883,7 @@ func (config *configOptions) loadReplacements() {
 			}
 		}
 	}
+	fmt.Println("relates==>", relates)
 }
 
 func (config *configOptions) loadIndexTypes() {
@@ -3134,7 +3148,9 @@ func (ic *indexClient) doIndexing(op *gtm.Op) (err error) {
 		return err
 	}
 
-	log.Println(op.Data)
+	if b, err := json.Marshal(op.Data); err == nil {
+		log.Println(string(b))
+	}
 	return
 }
 
@@ -3856,7 +3872,8 @@ func tsVersion(ts primitive.Timestamp) int64 {
 }
 
 func (ic *indexClient) doDelete(op *gtm.Op) {
-	todoLog.Println("doDelete")
+
+	todoLog.Println("doDelete", op)
 	//req := elastic.NewBulkDeleteRequest()
 	//req.UseEasyJSON(ic.config.EnableEasyJSON)
 	//if ic.config.DeleteStrategy == ignoreDeleteStrategy {
