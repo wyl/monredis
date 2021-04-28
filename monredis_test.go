@@ -128,6 +128,13 @@ func TestExtractRelateData(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Expected error for missing key")
 	}
+	data, err = extractData("foo.bar", map[string]interface{}{"foo": map[string]interface{}{"bar": []map[string]interface{}{{"id": 1}, {"id": 2}, {"id": 3}, {"id": 4}}}})
+	if err != nil {
+		t.Fatalf("Expected nil error")
+	}
+	if data != [4]int{1, 2, 3, 4} {
+		t.Fatalf("Expected extracting foo.bar value of 1")
+	}
 }
 
 func TestBuildRelateSelector(t *testing.T) {
