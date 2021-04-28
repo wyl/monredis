@@ -45,3 +45,9 @@ $(TARGET): $(TARGET).go
 	zip -r $(BUILD_DIR)/$(TARGET)-$(GIT_TAG).zip $(BUILD_DIR)
 clean:
 	$(RM) -R $(BUILD_DIR)
+build_docker:
+	docker build . -t harbor.formovie.net/formovie/monredis:latest
+
+push_docker:
+	docker build . -t harbor.formovie.net/formovie/monredis:latest
+
