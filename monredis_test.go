@@ -133,7 +133,7 @@ func TestExtractRelateData(t *testing.T) {
 		t.Fatalf("Expected nil error")
 	}
 	if data != [4]int{1, 2, 3, 4} {
-		t.Fatalf("Expected extracting foo.bar value of 1")
+		t.Fatalf("Expected extracting foo.bar value of 1，2，3，4")
 	}
 }
 
