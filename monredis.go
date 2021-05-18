@@ -3311,7 +3311,15 @@ func (ic *indexClient) routeDataRelate(op *gtm.Op) (skip bool, err error) {
 
 func (ic *indexClient) routeData(op *gtm.Op) (err error) {
 	skip := false
-	if op.IsSourceOplog() && len(ic.config.Relate) > 0 {
+	inDataRelta := false
+
+	for _, relate := range ic.config.Relate {
+		if relate.Namespace == op.Namespace {
+			inDataRelta = true
+			break
+		}
+	}
+	if (op.IsSourceOplog() && len(ic.config.Relate) > 0) || (inDataRelta && !op.IsSourceOplog()) {
 		skip, err = ic.routeDataRelate(op)
 	}
 	if !skip {
@@ -4770,6 +4778,7 @@ func (ic *indexClient) eventLoop() {
 				}
 				break
 			}
+
 			if op.IsSourceOplog() {
 				ic.lastTs = op.Timestamp
 				if ic.config.ResumeStrategy == tokenResumeStrategy {
