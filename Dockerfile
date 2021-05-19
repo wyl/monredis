@@ -2,15 +2,16 @@
 # Step 1: Build the app
 ####################################################################################################
 
-FROM golang:1.15 AS build-app
+FROM rwynn/monstache-builder-cache-rel6:1.0.6 AS build-app
 
 RUN mkdir /app
 
 WORKDIR /app
 
+RUN go env -w GOPROXY=https://goproxy.cn,direct
+
 COPY . .
 
-RUN go env -w GOPROXY=https://goproxy.cn,direct
 RUN go mod download
 
 RUN make release
@@ -23,4 +24,7 @@ FROM alpine:3.9.3
 
 ENTRYPOINT ["/bin/monredis"]
 
+EXPOSE 8080
+
 COPY --from=build-app /app/build/linux-amd64/monredis /bin/monredis
+

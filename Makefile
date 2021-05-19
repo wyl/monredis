@@ -48,3 +48,4 @@ clean:
 
 goreleaser:
 	 goreleaser  --rm-dist
+

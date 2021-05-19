@@ -1459,7 +1459,7 @@ func filterWithPlugin() gtm.OpFilter {
 			if ok, err := filterPlugin(input); err == nil {
 				keep = ok
 			} else {
-				errorLog.Println(err)
+				errorLog.Println("filterWithPlugin", err)
 			}
 		}
 		return keep
@@ -1479,14 +1479,16 @@ func filterWithScript() gtm.OpFilter {
 					arg3 := convertMapJavascript(op.UpdateDescription)
 					env.lock.Lock()
 					defer env.lock.Unlock()
+
+					fmt.Println(env.VM.Get("find"))
 					val, err := env.VM.Call("module.exports", arg, arg, arg2, arg3)
 					if err != nil {
-						errorLog.Println(err)
+						errorLog.Println("filterWithScript", err)
 					} else {
 						if ok, err := val.ToBoolean(); err == nil {
 							keep = ok
 						} else {
-							errorLog.Println(err)
+							errorLog.Println("filterWithScript", err)
 						}
 					}
 				}
@@ -1928,14 +1930,14 @@ func (config *configOptions) loadPipelines() {
 			lock:   &sync.Mutex{},
 		}
 		if err := env.VM.Set("module", make(map[string]interface{})); err != nil {
-			errorLog.Fatalln(err)
+			errorLog.Fatalln("loadPipelines", err)
 		}
 		if _, err := env.VM.Run(env.Script); err != nil {
-			errorLog.Fatalln(err)
+			errorLog.Fatalln("loadPipelines", err)
 		}
 		val, err := env.VM.Run("module.exports")
 		if err != nil {
-			errorLog.Fatalln(err)
+			errorLog.Fatalln("loadPipelines", err)
 		} else if !val.IsFunction() {
 			errorLog.Fatalln("module.exports must be a function")
 		}
@@ -1965,14 +1967,14 @@ func (config *configOptions) loadFilters() {
 				lock:   &sync.Mutex{},
 			}
 			if err := env.VM.Set("module", make(map[string]interface{})); err != nil {
-				errorLog.Fatalln(err)
+				errorLog.Fatalln("loadFilters", err)
 			}
 			if _, err := env.VM.Run(env.Script); err != nil {
-				errorLog.Fatalln(err)
+				errorLog.Fatalln("loadFilters", err)
 			}
 			val, err := env.VM.Run("module.exports")
 			if err != nil {
-				errorLog.Fatalln(err)
+				errorLog.Fatalln("loadFilters", err)
 			} else if !val.IsFunction() {
 				errorLog.Fatalln("module.exports must be a function")
 			}
@@ -2005,14 +2007,14 @@ func (config *configOptions) loadScripts() {
 				lock:   &sync.Mutex{},
 			}
 			if err := env.VM.Set("module", make(map[string]interface{})); err != nil {
-				errorLog.Fatalln(err)
+				errorLog.Fatalln("loadScripts", err)
 			}
 			if _, err := env.VM.Run(env.Script); err != nil {
-				errorLog.Fatalln(err)
+				errorLog.Fatalln("loadScripts", err)
 			}
 			val, err := env.VM.Run("module.exports")
 			if err != nil {
-				errorLog.Fatalln(err)
+				errorLog.Fatalln("loadScripts", err)
 			} else if !val.IsFunction() {
 				errorLog.Fatalln("module.exports must be a function")
 			}
@@ -2094,16 +2096,16 @@ func (config *configOptions) decodeAsTemplate() *configOptions {
 	}
 	tpl, err := ioutil.ReadFile(config.ConfigFile)
 	if err != nil {
-		errorLog.Fatalln(err)
+		errorLog.Fatalln("decodeAsTemplate", err)
 	}
 	var t = template.Must(template.New("config").Parse(string(tpl)))
 	var b bytes.Buffer
 	err = t.Execute(&b, env)
 	if err != nil {
-		errorLog.Fatalln(err)
+		errorLog.Fatalln("decodeAsTemplate", err)
 	}
 	if md, err := toml.Decode(b.String(), config); err != nil {
-		errorLog.Fatalln(err)
+		errorLog.Fatalln("decodeAsTemplate", err)
 	} else if ud := md.Undecoded(); len(ud) != 0 {
 		errorLog.Fatalf("Config file contains undecoded keys: %q", ud)
 	}
@@ -3311,15 +3313,7 @@ func (ic *indexClient) routeDataRelate(op *gtm.Op) (skip bool, err error) {
 
 func (ic *indexClient) routeData(op *gtm.Op) (err error) {
 	skip := false
-	inDataRelta := false
-
-	for _, relate := range ic.config.Relate {
-		if relate.Namespace == op.Namespace {
-			inDataRelta = true
-			break
-		}
-	}
-	if (op.IsSourceOplog() && len(ic.config.Relate) > 0) || (inDataRelta && !op.IsSourceOplog()) {
+	if op.IsSourceOplog() && len(ic.config.Relate) > 0 {
 		skip, err = ic.routeDataRelate(op)
 	}
 	if !skip {
@@ -3351,7 +3345,7 @@ func (ic *indexClient) processErr(err error) {
 	mux.Lock()
 	defer mux.Unlock()
 	exitStatus = 1
-	errorLog.Println(err)
+	errorLog.Println("processErr", err)
 	if config.FailFast {
 		os.Exit(exitStatus)
 	}
@@ -3525,7 +3519,7 @@ func loadBuiltinFunctions(client *mongo.Client, config *configOptions) {
 			byID:   true,
 		}
 		if err := env.VM.Set(fa.name, makeFind(fa)); err != nil {
-			errorLog.Fatalln(err)
+			errorLog.Fatalln("loadBuiltinFunctions", err)
 		}
 		fa = &findConf{
 			client: client,
@@ -3534,7 +3528,7 @@ func loadBuiltinFunctions(client *mongo.Client, config *configOptions) {
 			ns:     ns,
 		}
 		if err := env.VM.Set(fa.name, makeFind(fa)); err != nil {
-			errorLog.Fatalln(err)
+			errorLog.Fatalln("loadBuiltinFunctions", err)
 		}
 		fa = &findConf{
 			client: client,
@@ -3543,8 +3537,9 @@ func loadBuiltinFunctions(client *mongo.Client, config *configOptions) {
 			ns:     ns,
 			multi:  true,
 		}
+
 		if err := env.VM.Set(fa.name, makeFind(fa)); err != nil {
-			errorLog.Fatalln(err)
+			errorLog.Fatalln("loadBuiltinFunctions", err)
 		}
 		fa = &findConf{
 			client:        client,
@@ -4465,7 +4460,7 @@ func (ic *indexClient) buildFilterArray() []gtm.OpFilter {
 	if config.Worker != "" {
 		workerFilter, err := consistent.ConsistentHashFilter(config.Worker, config.Workers)
 		if err != nil {
-			errorLog.Fatalln(err)
+			errorLog.Fatalln("buildFilterArray", err)
 		}
 		filterArray = append(filterArray, workerFilter)
 	} else if config.Workers != nil {
