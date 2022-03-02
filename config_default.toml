@@ -1,0 +1,135 @@
+mongo-url = "mongodb://root:vnzcFLZ5Y5uVUK3Y@dds-2zeeb5cc9a6aecf41917-pub.mongodb.rds.aliyuncs.com:3717,dds-2zeeb5cc9a6aecf42759-pub.mongodb.rds.aliyuncs.com:3717/admin?replicaSet=mgset-17327671"
+redis-url = "redis://:gzd4attDAzmG5O6EgsmCbHbUxqUOKY@r-2ze1pzswz2kydk10k5pd.redis.rds.aliyuncs.com:6379/0"
+
+
+direct-read-namespaces =["fm-prod.page_section","fm-raw-prod.raw_entity"]
+change-stream-namespaces =["fm-prod.page_section","fm-prod.entity","fm-raw-prod.raw_entity"]
+stats = true
+dropped-collections = false
+dropped-databases = false
+#resume = true
+resume-write-unsafe = true
+resume-name = "default"
+resume-strategy = 0
+index-as-update = true
+#cluster-name = 'r-2ze1pzswz2kydk10k5-monredis-page-section'
+exit-after-direct-reads = false
+enable-http-server = true
+
+[[mapping]]
+namespace = "fm-prod.page_section"
+index = "fm-prod.page_section"
+command = "SET"
+key = "page_section"
+val = "{{ toJson . }}"
+
+[[filter]]
+namespace = "fm-prod.page_section"
+script = """
+module.exports = function(doc) {
+  return true
+}
+"""
+
+[[script]]
+namespace = "fm-prod.page_section"
+script = """
+module.exports = function(doc) {
+  return false
+}
+"""
+
+[[relate]]
+namespace = "fm-prod.page_section" # when a state changes trigger a thing change event since thing is associated to a state
+with-namespace = "fm-prod.entity"
+src-field = "items.id" # use the _id field of the state that changed to lookup associated things
+match-field = "_id" # only trigger change events for the things where thing.s (match-field) = state._id (src-field).
+#keep-src = false
+dot-notation = true
+
+[[relate]]
+namespace = "fm-prod.page_section" # when a state changes trigger a thing change event since thing is associated to a state
+with-namespace = "fm-raw-prod.raw_entity"
+src-field = "items.id" # use the _id field of the state that changed to lookup associated things
+match-field = "_id" # only trigger change events for the things where thing.s (match-field) = state._id (src-field).
+#keep-src = false
+dot-notation = true
+
+[[mapping]]
+namespace = "fm-prod.entity"
+index = "page_section"
+command = "HSET"
+key = "{{ .cp_album_id }}"
+val = "{{ toJson . }}"
+
+
+[[filter]]
+namespace = "fm-prod.entity"
+script = """
+module.exports = function(doc) {
+  console.log(JSON.stringify(doc))
+
+  return doc.content_status == 0 && doc.cp_sale_status == 1 && doc.sale_status == 1
+}
+"""
+
+[[script]]
+namespace = "fm-prod.entity"
+script = """
+module.exports = function(doc) {
+  var pageSection = findOne({"items.id": doc._id},{database:"fm-prod", collection:"page_section"})
+  if (!pageSection ){
+      return false
+  }
+
+  var result = {}
+  result.id = !!doc.id ? doc.id: doc._id
+  result.table="entity"
+  result.title=doc.title_cn
+  result.cp_channel=doc.cp_channel
+  result.cp_vid=doc.cp_vid
+  result.cp_album_id=doc.cp_album_id
+  result.alert = true
+  return result;
+}
+"""
+
+[[mapping]]
+namespace = "fm-raw-prod.raw_entity"
+index = "page_section"
+command = "HSET"
+key = "{{ .cp_album_id }}"
+val = "{{ toJson . }}"
+
+[[filter]]
+namespace = "fm-raw-prod.raw_entity"
+script = """
+module.exports = function(doc) {
+  return doc.content_status == 0 && doc.cp_sale_status == 1 && doc.sale_status == 1
+}
+"""
+
+[[script]]
+namespace = "fm-raw-prod.raw_entity"
+script = """
+module.exports = function(doc) {
+
+  console.log(JSON.stringify(doc))
+  var pageSection = findOne({"items.id": doc._id},{database:"fm-prod", collection:"page_section"})
+  if (!pageSection ){
+      return false
+  }
+
+  console.log(1)
+
+  var result = {}
+  result.id = !!doc.id ? doc.id: doc._id
+  result.table="raw_entity"
+  result.title=doc.title_cn
+  result.cp_channel=doc.cp_channel
+  result.cp_vid=doc.cp_vid
+  result.cp_album_id=doc.cp_album_id
+  result.alert = false
+  return result;
+}
+"""

@@ -205,6 +205,7 @@ type indexMapping struct {
 	Command   string `toml:"command"`
 	Key       string `toml:"key"`
 	Val       string `toml:"val"`
+	Expire    int    `toml:"expire"`
 
 	KeyTemplate   *template.Template
 	ValueTemplate *template.Template
@@ -443,6 +444,7 @@ func toString(toConvert interface{}) string {
 		return fmt.Sprint(toConvert)
 	}
 }
+
 func safeToLower(toConvert interface{}) string {
 	switch toConvert := toConvert.(type) {
 	case string:
@@ -811,6 +813,7 @@ func (ic *indexClient) defaultIndexMapping(op *gtm.Op) *indexMapping {
 		Command:   "SET",
 		Key:       "",
 		Val:       "",
+		Expire:    -1,
 	}
 }
 
@@ -825,6 +828,9 @@ func (ic *indexClient) mapIndex(op *gtm.Op) *indexMapping {
 		}
 		if m.Command != "" {
 			mapping.Command = m.Command
+		}
+		if m.Expire != 0 {
+			mapping.Expire = m.Expire
 		}
 		if m.Key != "" {
 			keyTmpl, err := template.New(m.Index + ":key").Funcs(funcMap).Parse(m.Key)
@@ -1248,7 +1254,10 @@ func (ic *indexClient) processRelated(root *gtm.Op) (err error) {
 				}
 
 				cursor, err := col.Find(context.Background(), sel, opts)
-
+				if err != nil {
+					ic.processErr(err)
+					continue
+				}
 				doc := make(map[string]interface{})
 				for cursor.Next(context.Background()) {
 					if err = cursor.Decode(&doc); err != nil {
@@ -1480,7 +1489,6 @@ func filterWithScript() gtm.OpFilter {
 					env.lock.Lock()
 					defer env.lock.Unlock()
 
-					fmt.Println(env.VM.Get("find"))
 					val, err := env.VM.Call("module.exports", arg, arg, arg2, arg3)
 					if err != nil {
 						errorLog.Println("filterWithScript", err)
@@ -1885,7 +1893,7 @@ func (config *configOptions) loadReplacements() {
 			}
 		}
 	}
-	fmt.Println("relates==>", relates)
+	//fmt.Println("relates==>", relates)
 }
 
 func (config *configOptions) loadIndexTypes() {
@@ -1898,6 +1906,7 @@ func (config *configOptions) loadIndexTypes() {
 					Command:   strings.ToLower(m.Command),
 					Key:       m.Key,
 					Val:       m.Val,
+					Expire:    m.Expire,
 				}
 			} else {
 				errorLog.Fatalln("Mappings must specify namespace and index")
@@ -3138,12 +3147,17 @@ func (ic *indexClient) doIndexing(op *gtm.Op) (err error) {
 	}
 	val = buffer.String()
 	buffer.Reset()
-
 	switch strings.ToLower(indexType.Command) {
 	case "hset":
+		//fmt.Println(indexType.Command, indexType.Index, key, val)
 		redisWriter.Send(indexType.Command, indexType.Index, key, val)
 	default:
 		redisWriter.Send(indexType.Command, key, val)
+
+		if indexType.Expire != -1 {
+			fmt.Println("EXPIRE", key, indexType.Expire)
+			redisWriter.Send("EXPIRE", key, indexType.Expire)
+		}
 	}
 	if err := redisWriter.Flush(); err != nil {
 		errorLog.Println("Error flushing -----> ", err, op.Data)
@@ -4940,7 +4954,6 @@ func mustConfig() *configOptions {
 	}
 	config.parseCommandLineFlags()
 	if config.Version {
-		fmt.Println(version)
 		os.Exit(0)
 	}
 	config.build()
