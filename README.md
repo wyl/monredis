@@ -32,6 +32,7 @@ index = "index-name"
 command = "SET"
 key = "key:{{.key1}}:key2:{{.key2}}:key3:{{.key3}}"
 val = "{{ toString .id }}"
+expire = -1 # default -1
 
 [[script]]
 namespace = "your-database.collection"
@@ -65,4 +66,3 @@ script = """
    
  
 参考连接：[monstache](https://github.com/rwynn/monstache)
-   
